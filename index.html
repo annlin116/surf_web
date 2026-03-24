@@ -1,673 +1,709 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>烏石港衝浪預報</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>烏石港浪況</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --deep:    #071020;
+  --surface: #0f1f38;
+  --surf2:   #162844;
+  --border:  #1e3a5f;
+  /* ── 顏色分級（現版）── */
+  --excellent: #22d3ee;
+  --good:      #4ade80;
+  --fair:      #facc15;
+  --poor:      #f87171;
+  --accent:    #22d3ee;
+  --text:      #e8f4f8;
+  --muted:     #6b8fa8;
+  --bebas: 'Bebas Neue', sans-serif;
+  --sans:  'Noto Sans TC', sans-serif;
+  --mono:  'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: linear-gradient(160deg, #0a1628 0%, #0d2744 40%, #0a3d5c 100%);
-      min-height: 100vh;
-      color: #e8f4f8;
-    }
+body {
+  background: var(--deep);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-    /* ── Header ── */
-    header { text-align: center; padding: 2.2rem 1rem 1rem; }
+/* ── HERO ── */
+.hero {
+  position: relative;
+  background: linear-gradient(180deg, #0a1e3d 0%, #0a2a4a 60%, var(--deep) 100%);
+  padding: 28px 20px 36px;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60'%3E%3Cpath d='M0,30 C200,60 400,0 600,30 C800,60 1000,0 1200,30 L1200,60 L0,60 Z' fill='%23071020'/%3E%3C/svg%3E") no-repeat bottom;
+  background-size: cover;
+}
+.wave-lines { position: absolute; inset: 0; pointer-events: none; opacity: 0.13; padding-top: 16px; }
+.wave-lines span {
+  display: block; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  margin-bottom: 22px;
+  animation: waveLine 4s ease-in-out infinite;
+}
+.wave-lines span:nth-child(2) { animation-delay:.8s; opacity:.6; margin-left:40px; }
+.wave-lines span:nth-child(3) { animation-delay:1.6s; opacity:.4; margin-left:80px; }
+@keyframes waveLine {
+  0%,100% { transform: scaleX(1) translateX(0); }
+  50% { transform: scaleX(1.05) translateX(-2%); }
+}
 
-    .surf-logo { width: 88px; height: 66px; margin-bottom: 0.4rem; }
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative; z-index: 1;
+}
+.location-name {
+  font-family: var(--bebas);
+  font-size: 46px;
+  letter-spacing: 3px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-icon { width: 40px; height: 32px; opacity: 0.88; }
+.location-sub { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 2px; margin-top: 5px; }
 
-    header h1 {
-      font-size: clamp(1.6rem, 5vw, 2.4rem);
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      color: #fff;
-    }
-    header h1 span { color: #38bdf8; }
-    header p { margin-top: 0.35rem; color: #94a3b8; font-size: 0.86rem; }
+.refresh-btn {
+  background: rgba(34,211,238,0.08);
+  border: 1px solid rgba(34,211,238,0.25);
+  border-radius: 10px; color: var(--accent);
+  padding: 8px 14px;
+  font-family: var(--mono); font-size: 12px;
+  cursor: pointer; transition: background .2s; white-space: nowrap; margin-top: 4px;
+}
+.refresh-btn:hover { background: rgba(34,211,238,0.18); }
+.refresh-btn.loading { opacity: .5; pointer-events: none; }
 
-    .wave-bar { display: flex; justify-content: center; gap: 6px; margin: 0.9rem 0 0.4rem; }
-    .wave-bar span {
-      display: inline-block; width: 28px; height: 5px;
-      border-radius: 99px; background: #38bdf8; opacity: 0.4;
-      animation: wPulse 1.8s ease-in-out infinite;
-    }
-    .wave-bar span:nth-child(2) { animation-delay:.2s; width:40px; opacity:.7; }
-    .wave-bar span:nth-child(3) { animation-delay:.4s; width:22px; opacity:.5; }
-    .wave-bar span:nth-child(4) { animation-delay:.6s; width:35px; opacity:.6; }
-    .wave-bar span:nth-child(5) { animation-delay:.8s; }
-    @keyframes wPulse {
-      0%,100% { transform:scaleX(1); opacity:.4; }
-      50% { transform:scaleX(1.3); opacity:.9; }
-    }
+/* ── NOW BLOCK ── */
+.now-block {
+  position: relative; z-index: 1;
+  margin-top: 24px;
+  display: flex; align-items: flex-end; gap: 20px;
+}
+.score-ring {
+  width: 96px; height: 96px; flex-shrink: 0;
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.score-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.score-ring circle { fill: none; stroke-width: 6; stroke-linecap: round; }
+.ring-track { stroke: rgba(255,255,255,0.08); }
+.ring-fill { transition: stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1), stroke .4s; }
+.ring-inner { z-index: 1; text-align: center; }
+.ring-num { font-family: var(--bebas); font-size: 36px; line-height: 1; }
+.ring-lbl { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 1px; }
 
-    /* ── Legend ── */
-    .legend {
-      display: flex; justify-content: center;
-      gap: 1.1rem; flex-wrap: wrap;
-      margin: 0.5rem 1rem 1rem;
-    }
-    .legend-item { display:flex; align-items:center; gap:5px; font-size:0.74rem; color:#94a3b8; }
-    .legend-dot { width:9px; height:9px; border-radius:50%; }
-    .dot-excellent { background:#22d3ee; }
-    .dot-good      { background:#4ade80; }
-    .dot-fair      { background:#facc15; }
-    .dot-poor      { background:#f87171; }
+.now-details { flex: 1; }
+.now-verdict { font-family: var(--bebas); font-size: 30px; letter-spacing: 1px; line-height: 1; }
+.now-verdict.excellent { color: var(--excellent); }
+.now-verdict.good      { color: var(--good); }
+.now-verdict.fair      { color: var(--fair); }
+.now-verdict.poor      { color: var(--poor); }
 
-    /* ── Status ── */
-    #status { text-align:center; padding:3rem 1rem; color:#94a3b8; }
-    .spinner {
-      width:44px; height:44px;
-      border:4px solid rgba(56,189,248,0.15);
-      border-top-color:#38bdf8;
-      border-radius:50%;
-      animation:spin .9s linear infinite;
-      margin:0 auto 1rem;
-    }
-    @keyframes spin { to { transform:rotate(360deg); } }
+.now-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+.now-stat .ns-val { font-family: var(--bebas); font-size: 22px; letter-spacing: .5px; }
+.now-stat .ns-lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
 
-    /* ── Cards grid ── */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(292px, 1fr));
-      gap: 1rem;
-      max-width: 1140px;
-      margin: 0 auto;
-      padding: 0 1rem 3rem;
-    }
+/* ── CONTAINER ── */
+.container { max-width: 540px; margin: 0 auto; padding: 22px 16px 60px; }
 
-    /* ── Card ── */
-    .card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 18px;
-      padding: 1.2rem 1.3rem 1rem;
-      backdrop-filter: blur(8px);
-      transition: box-shadow 0.2s;
-      position: relative;
-    }
-    .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.section-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-    .card::before {
-      content:''; position:absolute;
-      top:0; left:0; right:0; height:4px;
-      border-radius:18px 18px 0 0;
-    }
-    .card.excellent::before { background:linear-gradient(90deg,#22d3ee,#0ea5e9); }
-    .card.good::before      { background:linear-gradient(90deg,#4ade80,#22c55e); }
-    .card.fair::before      { background:linear-gradient(90deg,#facc15,#eab308); }
-    .card.poor::before      { background:linear-gradient(90deg,#f87171,#ef4444); }
-    .card.today-card { border-color:rgba(56,189,248,0.4); background:rgba(56,189,248,0.08); }
+/* ── DAY CARDS ── */
+.day-cards { display: flex; flex-direction: column; gap: 0; margin-bottom: 28px; }
 
-    /* ── Card header (clickable) ── */
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-      cursor: pointer;
-      user-select: none;
-    }
-    .card-header-left { display:flex; align-items:center; gap:0.65rem; }
+.day-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 6px;
+  padding: 13px 16px;
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+  overflow: hidden;
+}
+.day-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  border-radius: 14px 0 0 14px;
+}
+.day-card.excellent::before { background: var(--excellent); }
+.day-card.good::before      { background: var(--good); }
+.day-card.fair::before      { background: var(--fair); }
+.day-card.poor::before      { background: var(--poor); }
+.day-card:hover  { border-color: rgba(34,211,238,0.3); background: var(--surf2); }
+.day-card.active {
+  border-color: rgba(34,211,238,0.4); background: var(--surf2);
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+  margin-bottom: 0;
+}
 
-    .card-surf-icon { width:38px; height:30px; flex-shrink:0; opacity:0.9; }
+.day-name { font-family: var(--bebas); font-size: 20px; letter-spacing: .5px; line-height: 1; }
+.day-mmdd { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    .card-date .weekday { font-size:0.7rem; color:#94a3b8; letter-spacing:0.06em; }
-    .card-date .date-str { font-size:1.05rem; font-weight:700; color:#fff; }
-    .today-tag {
-      display:inline-block; background:#38bdf8; color:#0a1628;
-      font-size:0.58rem; font-weight:700;
-      padding:1px 6px; border-radius:99px; margin-left:5px; vertical-align:middle;
-    }
+.day-wave { font-family: var(--bebas); font-size: 17px; letter-spacing: .5px; }
+.day-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    .card-header-right { display:flex; align-items:center; gap:0.55rem; }
+.day-badge {
+  font-family: var(--bebas); font-size: 14px; letter-spacing: 1px;
+  padding: 3px 10px; border-radius: 6px; white-space: nowrap;
+}
+.badge-excellent { background: rgba(34,211,238,0.12); color: var(--excellent); }
+.badge-good      { background: rgba(74,222,128,0.12); color: var(--good); }
+.badge-fair      { background: rgba(250,204,21,0.12); color: var(--fair); }
+.badge-poor      { background: rgba(248,113,113,0.1); color: var(--poor); }
 
-    .rating-badge { display:flex; flex-direction:column; align-items:center; gap:1px; }
-    .rating-badge .score { font-size:1.5rem; font-weight:800; line-height:1; }
-    .card.excellent .score { color:#22d3ee; }
-    .card.good      .score { color:#4ade80; }
-    .card.fair      .score { color:#facc15; }
-    .card.poor      .score { color:#f87171; }
-    .rating-badge .grade-label { font-size:0.62rem; color:#94a3b8; }
+/* chevron inside badge area */
+.day-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.day-chevron { font-size: 10px; color: var(--muted); transition: transform .3s; }
+.day-card.active .day-chevron { transform: rotate(180deg); }
 
-    .expand-btn {
-      background:rgba(255,255,255,0.07);
-      border:1px solid rgba(255,255,255,0.1);
-      border-radius:50%;
-      width:28px; height:28px;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer;
-      transition:background 0.2s;
-      flex-shrink:0;
-    }
-    .expand-btn:hover { background:rgba(255,255,255,0.14); }
-    .expand-btn svg { width:14px; height:14px; transition:transform 0.3s ease; }
-    .card.expanded .expand-btn svg { transform:rotate(180deg); }
+/* ── HOURLY PANEL ── */
+.hourly-panel {
+  background: var(--surf2);
+  border: 1px solid rgba(34,211,238,0.4);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  padding: 12px 14px 14px;
+  margin-bottom: 6px;
+  display: none;
+  animation: slideDown .22s ease;
+}
+.hourly-panel.show { display: block; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    /* ── Metrics ── */
-    .divider { height:1px; background:rgba(255,255,255,0.07); margin:0.55rem 0; }
+/* best banner */
+.best-banner {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(250,204,21,0.1);
+  border: 1px solid rgba(250,204,21,0.32);
+  color: #fbbf24;
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  padding: 3px 10px; border-radius: 99px; margin-bottom: 10px;
+}
 
-    .metrics { display:grid; grid-template-columns:1fr 1fr; gap:0.55rem 0.8rem; }
-    .metric { display:flex; flex-direction:column; gap:2px; }
-    .metric-label { font-size:0.66rem; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
-    .metric-value { font-size:0.9rem; font-weight:600; color:#e2e8f0; display:flex; align-items:center; gap:3px; }
-    .unit { font-size:0.69rem; font-weight:400; color:#94a3b8; }
+/* hourly scroll */
+.hourly-scroll {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.hourly-scroll::-webkit-scrollbar { height: 3px; }
+.hourly-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    .surf-tip {
-      margin-top:0.7rem; padding:0.4rem 0.7rem;
-      background:rgba(255,255,255,0.04);
-      border-radius:8px; font-size:0.74rem; color:#94a3b8; line-height:1.5;
-    }
+/* hour tile */
+.hour-tile {
+  flex-shrink: 0; width: 60px; text-align: center;
+  padding: 8px 5px 6px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  transition: border-color .15s;
+}
+.hour-tile.night { opacity: .42; }
 
-    /* ── Hourly panel (expand/collapse via grid trick) ── */
-    .hourly-panel {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 0.38s cubic-bezier(0.4,0,0.2,1);
-    }
-    .hourly-panel.open { grid-template-rows: 1fr; }
+.h-time  { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.h-score { font-family: var(--bebas); font-size: 18px; letter-spacing: .5px; margin: 2px 0 1px; }
+.h-score.excellent { color: var(--excellent); }
+.h-score.good      { color: var(--good); }
+.h-score.fair      { color: var(--fair); }
+.h-score.poor      { color: var(--muted); }
+.h-wave  { font-family: var(--mono); font-size: 10px; color: var(--text); }
+.h-wind  { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.h-bar   { width: 100%; height: 2px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+.h-fill  { height: 100%; border-radius: 99px; }
 
-    .hourly-inner { overflow: hidden; min-height: 0; }
-    .hourly-panel.open .hourly-inner { overflow: visible; }
+/* ── Best bracket ── */
+.hour-tile.best-start,
+.hour-tile.best-mid,
+.hour-tile.best-end {
+  background: rgba(250,204,21,0.07);
+  border-top:    1.5px solid rgba(250,204,21,0.52);
+  border-bottom: 1.5px solid rgba(250,204,21,0.52);
+  border-left:   1px solid transparent;
+  border-right:  1px solid transparent;
+  border-radius: 0;
+}
+.hour-tile.best-start {
+  border-left: 1.5px solid rgba(250,204,21,0.52);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+.hour-tile.best-end {
+  border-right: 1.5px solid rgba(250,204,21,0.52);
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+.hour-tile.best-solo {
+  border: 1.5px solid rgba(250,204,21,0.55);
+  border-radius: 10px;
+  background: rgba(250,204,21,0.07);
+  box-shadow: 0 0 10px rgba(250,204,21,0.18);
+}
+.hour-tile.best-start .h-time,
+.hour-tile.best-mid   .h-time,
+.hour-tile.best-end   .h-time,
+.hour-tile.best-solo  .h-time { color: #fbbf24; }
 
-    .hourly-content { padding-top: 0.8rem; }
+.panel-note { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 8px; text-align: right; }
 
-    .hourly-divider { height:1px; background:rgba(255,255,255,0.07); margin-bottom:0.7rem; }
+/* ── GUIDE ── */
+.guide-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px; margin-bottom: 20px;
+}
+.guide-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+}
+.guide-row:last-child { border-bottom: none; }
+.guide-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.guide-label { font-family: var(--bebas); font-size: 17px; letter-spacing: .5px; width: 70px; }
+.guide-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
-    /* best window banner */
-    .best-banner {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(251,191,36,0.12);
-      border: 1px solid rgba(251,191,36,0.38);
-      color: #fbbf24;
-      font-size: 0.71rem;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 99px;
-      margin-bottom: 0.65rem;
-      letter-spacing: 0.02em;
-    }
+/* ── LOADING / ERROR ── */
+.loading-state, .error-state {
+  text-align: center; padding: 60px 20px;
+  font-family: var(--mono); font-size: 13px; color: var(--muted);
+}
+.loading-wave { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+.loading-wave span {
+  width: 6px; border-radius: 3px; background: var(--accent); opacity: .7;
+  animation: waveBar 1.2s ease-in-out infinite;
+}
+.loading-wave span:nth-child(1){animation-delay:0s}
+.loading-wave span:nth-child(2){animation-delay:.15s}
+.loading-wave span:nth-child(3){animation-delay:.3s}
+.loading-wave span:nth-child(4){animation-delay:.45s}
+.loading-wave span:nth-child(5){animation-delay:.6s}
+@keyframes waveBar { 0%,100%{height:8px} 50%{height:28px} }
 
-    /* ── Hourly scroll ── */
-    .hourly-scroll {
-      display: flex;
-      gap: 5px;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.15) transparent;
-    }
-    .hourly-scroll::-webkit-scrollbar { height:4px; }
-    .hourly-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:99px; }
-    .hourly-scroll::-webkit-scrollbar-track { background:transparent; }
+.retry-btn {
+  margin-top: 14px; padding: 8px 20px;
+  background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.25);
+  border-radius: 8px; color: var(--accent);
+  font-family: var(--mono); font-size: 12px; cursor: pointer;
+}
 
-    /* ── Hour tile ── */
-    .hour-tile {
-      flex-shrink: 0;
-      width: 62px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      padding: 7px 5px 5px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      transition: transform 0.15s;
-    }
-    .hour-tile:hover { transform:translateY(-2px); }
+.updated-at { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 10px; }
 
-    .hour-time { font-size:0.65rem; font-weight:600; color:#94a3b8; }
-
-    .hour-score-num { font-size:0.92rem; font-weight:800; line-height:1; }
-    .sc-excellent { color:#22d3ee; }
-    .sc-good      { color:#4ade80; }
-    .sc-fair      { color:#facc15; }
-    .sc-poor      { color:#64748b; }
-
-    .hour-wave { font-size:0.63rem; color:#cbd5e1; }
-    .hour-wind { font-size:0.62rem; color:#94a3b8; }
-
-    .hour-bar { width:100%; height:3px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden; margin-top:1px; }
-    .hour-bar-fill { height:100%; border-radius:99px; }
-
-    /* night dim */
-    .hour-tile.night { opacity:0.45; }
-
-    /* BEST tiles – bracket frame */
-    .hour-tile.best-start,
-    .hour-tile.best-mid,
-    .hour-tile.best-end,
-    .hour-tile.best-solo {
-      background: rgba(251,191,36,0.1);
-    }
-    /* top + bottom border for whole window */
-    .hour-tile.best-start,
-    .hour-tile.best-mid,
-    .hour-tile.best-end {
-      border-top: 1.5px solid rgba(251,191,36,0.6);
-      border-bottom: 1.5px solid rgba(251,191,36,0.6);
-      border-radius: 0;
-      border-left: none;
-      border-right: none;
-    }
-    .hour-tile.best-start {
-      border-left: 1.5px solid rgba(251,191,36,0.6);
-      border-top-left-radius: 10px;
-      border-bottom-left-radius: 10px;
-    }
-    .hour-tile.best-end {
-      border-right: 1.5px solid rgba(251,191,36,0.6);
-      border-top-right-radius: 10px;
-      border-bottom-right-radius: 10px;
-    }
-    .hour-tile.best-solo {
-      border: 1.5px solid rgba(251,191,36,0.6);
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(251,191,36,0.25);
-    }
-    .hour-tile.best-start .hour-time,
-    .hour-tile.best-mid .hour-time,
-    .hour-tile.best-end .hour-time,
-    .hour-tile.best-solo .hour-time { color:#fbbf24; }
-
-    /* ── Footer ── */
-    footer { text-align:center; padding:0 1rem 2.5rem; font-size:0.72rem; color:#475569; }
-    footer a { color:#38bdf8; text-decoration:none; }
-    footer a:hover { text-decoration:underline; }
-  </style>
+footer { text-align: center; padding-bottom: 2rem; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+footer a { color: var(--accent); text-decoration: none; }
+</style>
 </head>
 <body>
 
-<header>
-  <!-- Surfer SVG logo -->
-  <svg class="surf-logo" viewBox="0 0 88 66" xmlns="http://www.w3.org/2000/svg">
-    <path d="M0,50 C14,36 28,52 44,42 C60,32 74,50 88,40 L88,66 L0,66Z" fill="#0369a1" opacity="0.55"/>
-    <path d="M0,56 C16,44 32,58 50,50 C68,42 78,56 88,48 L88,66 L0,66Z" fill="#38bdf8" opacity="0.4"/>
-    <!-- surfboard -->
-    <ellipse cx="42" cy="43" rx="19" ry="3.5" fill="white" opacity="0.92" transform="rotate(-10,42,43)"/>
-    <line x1="40" y1="39" x2="42" y2="47" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-    <!-- surfer body -->
-    <circle cx="47" cy="27" r="5.5" fill="white" opacity="0.95"/>
-    <line x1="47" y1="32" x2="44" y2="41" stroke="white" stroke-width="3" stroke-linecap="round"/>
-    <!-- arms -->
-    <line x1="46" y1="35" x2="37" y2="31" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="46" y1="35" x2="55" y2="30" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- legs -->
-    <line x1="44" y1="41" x2="39" y2="45" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="44" y1="41" x2="49" y2="44" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  </svg>
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="wave-lines"><span></span><span></span><span></span></div>
 
-  <h1>烏石港 <span>衝浪預報</span></h1>
-  <p>宜蘭縣頭城鎮 ・ 24.66°N, 121.87°E</p>
-  <div class="wave-bar">
-    <span></span><span></span><span></span><span></span><span></span>
+  <div class="hero-top">
+    <div>
+      <div class="location-name">
+        <!-- surf icon -->
+        <svg class="hero-icon" viewBox="0 0 44 34" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,22 C10,14 20,22 28,18 C36,14 40,22 44,18 L44,34 L0,34Z" fill="#0284c7" opacity="0.55"/>
+          <path d="M0,26 C12,20 22,28 32,24 C40,21 42,28 44,24 L44,34 L0,34Z" fill="#38bdf8" opacity="0.45"/>
+          <ellipse cx="22" cy="19" rx="11" ry="2.2" fill="white" opacity="0.92" transform="rotate(-9,22,19)"/>
+          <circle cx="25" cy="11" r="3.2" fill="white" opacity="0.95"/>
+          <line x1="25" y1="14" x2="23" y2="19" stroke="white" stroke-width="2"   stroke-linecap="round"/>
+          <line x1="24" y1="16" x2="19" y2="14" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="24" y1="16" x2="30" y2="13" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="23" y1="19" x2="20" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="23" y1="19" x2="26" y2="21" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        烏石港
+      </div>
+      <div class="location-sub">WUSHIH HARBOR · YILAN · 24.66°N 121.87°E</div>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↻ 更新</button>
   </div>
-</header>
 
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot dot-excellent"></div>極佳（75+）</div>
-  <div class="legend-item"><div class="legend-dot dot-good"></div>適合（55+）</div>
-  <div class="legend-item"><div class="legend-dot dot-fair"></div>普通（35+）</div>
-  <div class="legend-item"><div class="legend-dot dot-poor"></div>不適合</div>
+  <!-- current score ring -->
+  <div class="now-block" id="nowBlock" style="display:none">
+    <div class="score-ring">
+      <svg viewBox="0 0 96 96">
+        <circle class="ring-track" cx="48" cy="48" r="40"/>
+        <circle class="ring-fill" id="ringFill" cx="48" cy="48" r="40"
+          stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+      </svg>
+      <div class="ring-inner">
+        <div class="ring-num" id="ringNum">-</div>
+        <div class="ring-lbl">/ 100</div>
+      </div>
+    </div>
+    <div class="now-details">
+      <div class="now-verdict" id="nowVerdict">-</div>
+      <div class="now-stats">
+        <div class="now-stat"><div class="ns-val" id="nowWave">-</div><div class="ns-lbl">浪高 m</div></div>
+        <div class="now-stat"><div class="ns-val" id="nowPeriod">-</div><div class="ns-lbl">週期 s</div></div>
+        <div class="now-stat"><div class="ns-val" id="nowWind">-</div><div class="ns-lbl">風速 m/s</div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div id="status">
-  <div class="spinner"></div>
-  <p>正在載入海象資料…</p>
+<!-- ── MAIN ── -->
+<div class="container">
+  <div class="loading-state" id="loadingState">
+    <div class="loading-wave"><span></span><span></span><span></span><span></span><span></span></div>
+    正在讀取浪況資料…
+  </div>
+  <div class="error-state" id="errorState" style="display:none">
+    <div style="font-size:32px;margin-bottom:12px">🌊</div>
+    無法取得資料，請檢查網路連線
+    <br><button class="retry-btn" onclick="loadData()">重試</button>
+  </div>
+
+  <div id="dataContent" style="display:none">
+    <div class="updated-at" id="updatedAt"></div>
+
+    <div class="section-title">7 天預報</div>
+    <div class="day-cards" id="dayCards"></div>
+
+    <div class="section-title">判斷標準</div>
+    <div class="guide-card">
+      <div class="guide-row">
+        <div class="guide-dot" style="background:var(--excellent)"></div>
+        <div class="guide-label" style="color:var(--excellent)">極佳</div>
+        <div class="guide-desc">浪高 1–2.5m，週期 8s+，離岸微風，適合各級衝浪</div>
+      </div>
+      <div class="guide-row">
+        <div class="guide-dot" style="background:var(--good)"></div>
+        <div class="guide-label" style="color:var(--good)">適合</div>
+        <div class="guide-desc">浪高 0.6–3m，週期 6s+，風速尚可，適合中進階</div>
+      </div>
+      <div class="guide-row">
+        <div class="guide-dot" style="background:var(--fair)"></div>
+        <div class="guide-label" style="color:var(--fair)">普通</div>
+        <div class="guide-desc">條件尚可，浪不穩或風稍強，適合練習或初學</div>
+      </div>
+      <div class="guide-row">
+        <div class="guide-dot" style="background:var(--poor)"></div>
+        <div class="guide-label" style="color:var(--poor)">不適合</div>
+        <div class="guide-desc">浪太小、太大或強風亂浪，不建議下水</div>
+      </div>
+    </div>
+
+    <footer>
+      資料來源：<a href="https://open-meteo.com" target="_blank">Open-Meteo</a>（免費氣象 & 海象 API）
+    </footer>
+  </div>
 </div>
-
-<div class="cards" id="cards" style="display:none"></div>
-
-<footer>
-  資料來源：<a href="https://open-meteo.com" target="_blank">Open-Meteo</a>（免費氣象 & 海象 API）・ 每次開啟頁面自動更新
-</footer>
 
 <script>
 const LAT = 24.66, LON = 121.87;
-const OFFSHORE_DIR = 225; // 西南，離岸最佳
-const ONSHORE_DIR  = 45;  // 東北，迎岸
+const DAYS_TW = ['日','一','二','三','四','五','六'];
 
-const WEEKDAYS = ['日','一','二','三','四','五','六'];
-const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+// ── helpers ──
+function angleDiff(a, b) { return Math.abs(((a-b)%360+540)%360-180); }
 
-const WMO_LABEL = {0:'晴天',1:'大致晴',2:'局部多雲',3:'陰天',45:'霧',48:'霧淞',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'陣雨',81:'陣雨',82:'暴雨',95:'雷陣雨',96:'雷雨夾冰雹',99:'強雷雨夾冰雹'};
-const WMO_ICON  = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
-
-function wmoInfo(code) {
-  const c = parseInt(code);
-  return { label: WMO_LABEL[c] || '未知', icon: WMO_ICON[c] || '🌡️' };
+function windArrowCh(deg) {
+  return ['↑','↗','→','↘','↓','↙','←','↖'][Math.round(((deg||0)+22.5)/45)%8];
 }
 
-function angleDiff(a, b) {
-  return Math.abs(((a - b) % 360 + 540) % 360 - 180);
+// ── 顏色分級（現版）──
+function gradeInfo(score) {
+  if (score >= 75) return { grade:'極佳',   cls:'excellent', color:'#22d3ee' };
+  if (score >= 55) return { grade:'適合',   cls:'good',      color:'#4ade80' };
+  if (score >= 35) return { grade:'普通',   cls:'fair',      color:'#facc15' };
+  return              { grade:'不適合', cls:'poor',      color:'#f87171' };
 }
 
-function windArrow(deg) {
-  const d = ['↓','↙','←','↖','↑','↗','→','↘'];
-  return d[Math.round(((deg + 180) % 360) / 45) % 8];
-}
-
-function degToCompass(deg) {
-  const d = ['北','東北','東','東南','南','西南','西','西北'];
-  return d[Math.round(deg / 45) % 8];
-}
-
-function scoreGrade(s) {
-  if (s >= 75) return { grade:'極佳', cls:'excellent', scCls:'sc-excellent', color:'#22d3ee' };
-  if (s >= 55) return { grade:'適合', cls:'good',      scCls:'sc-good',      color:'#4ade80' };
-  if (s >= 35) return { grade:'普通', cls:'fair',      scCls:'sc-fair',      color:'#facc15' };
-  return              { grade:'不適合',cls:'poor',     scCls:'sc-poor',      color:'#f87171' };
-}
-
-function calcScore({ waveHeight, wavePeriod, windSpeed, windDir, precip, isHourly = false }) {
+// ── 評分邏輯（現版，輸入 m/s 風速）──
+function calcScore({ waveH, waveP, windMs, windDir, precipMmH }) {
   let s = 0;
-  const notes = [];
 
   // 波高
-  if      (waveHeight < 0.4) { notes.push('浪太小'); }
-  else if (waveHeight < 0.8) { s += 15; notes.push('小浪'); }
-  else if (waveHeight < 1.5) { s += 30; notes.push('浪高佳'); }
-  else if (waveHeight < 2.5) { s += 25; notes.push('中大浪'); }
-  else if (waveHeight < 3.5) { s += 15; notes.push('大浪進階'); }
-  else                        { notes.push('浪太大危險'); }
+  if      (waveH < 0.4) {}
+  else if (waveH < 0.8) s += 15;
+  else if (waveH < 1.5) s += 30;
+  else if (waveH < 2.5) s += 25;
+  else if (waveH < 3.5) s += 15;
+  // > 3.5: 0
 
   // 浪週期
-  if      (wavePeriod < 5)  { notes.push('週期短浪碎'); }
-  else if (wavePeriod < 8)  { s += 10; }
-  else if (wavePeriod < 12) { s += 20; notes.push('週期佳'); }
-  else                       { s += 25; notes.push('長週期湧浪'); }
+  if      (waveP < 5)  {}
+  else if (waveP < 8)  s += 10;
+  else if (waveP < 12) s += 20;
+  else                  s += 25;
 
-  // 風速
-  if      (windSpeed < 10) { s += 20; notes.push('微風'); }
-  else if (windSpeed < 20) { s += 15; }
-  else if (windSpeed < 30) { s += 5;  notes.push('風偏大'); }
-  else                      { notes.push('強風亂浪'); }
+  // 風速 m/s
+  if      (windMs < 3) s += 20;
+  else if (windMs < 5) s += 15;
+  else if (windMs < 8) s += 5;
+  // >= 8: 0
 
-  // 風向
+  // 風向（離岸 SW225°，迎岸 NE45°）
   if (windDir != null) {
-    const dOff = angleDiff(windDir, OFFSHORE_DIR);
-    const dOn  = angleDiff(windDir, ONSHORE_DIR);
-    if      (dOff < 45)  { s += 15; notes.push('離岸風佳'); }
-    else if (dOff < 90)  { s += 8; }
-    else if (dOn  < 45)  { s -= 5;  notes.push('迎岸風'); }
+    const dOff = angleDiff(windDir, 225);
+    const dOn  = angleDiff(windDir, 45);
+    if      (dOff < 45) s += 15;
+    else if (dOff < 90) s += 8;
+    else if (dOn  < 45) s -= 5;
   }
 
-  // 降雨
-  const rh = isHourly ? precip : (precip / 24);
-  if      (rh > 5) { s -= 15; notes.push('強降雨'); }
-  else if (rh > 1) { s -= 5;  notes.push('有雨'); }
+  // 降雨 mm/h
+  if      (precipMmH > 5) s -= 15;
+  else if (precipMmH > 1) s -= 5;
 
-  return { score: Math.max(0, Math.min(100, s)), notes };
+  return Math.max(0, Math.min(100, s));
 }
 
-// Find best consecutive window at or above threshold
+// ── 最佳時段 ──
 function findBestWindow(scores, threshold) {
-  let best = null;
-  let i = 0;
+  let best = null, i = 0;
   while (i < scores.length) {
     if (scores[i] >= threshold) {
       let j = i;
       while (j < scores.length && scores[j] >= threshold) j++;
       const slice = scores.slice(i, j);
-      const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
-      if (!best || avg > best.avg || (avg === best.avg && slice.length > best.len)) {
-        best = { start: i, end: j - 1, avg, len: j - i };
-      }
+      const avg = slice.reduce((a,b)=>a+b,0)/slice.length;
+      if (!best || avg > best.avg || (avg===best.avg && slice.length>best.len))
+        best = { start:i, end:j-1, avg, len:j-i };
       i = j;
-    } else { i++; }
+    } else i++;
   }
   return best;
 }
 
-function groupHourlyByDate(marineH, weatherH) {
-  const grouped = {};
-  (marineH.time || []).forEach((t, i) => {
-    const date = t.slice(0, 10);
-    const hour = parseInt(t.slice(11, 13));
-    if (!grouped[date]) grouped[date] = [];
-    grouped[date].push({
-      hour,
-      waveHeight: marineH.wave_height?.[i]    ?? 0,
-      wavePeriod: marineH.wave_period?.[i]    ?? 0,
-      waveDir:    marineH.wave_direction?.[i] ?? null,
-      windSpeed:  weatherH.wind_speed_10m?.[i]      ?? 0,
-      windDir:    weatherH.wind_direction_10m?.[i]  ?? null,
-      precip:     weatherH.precipitation?.[i]       ?? 0,
-      code:       weatherH.weather_code?.[i]        ?? 0,
+// ── data store ──
+let allHourly = [];
+
+// ── LOAD ──
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading'); btn.textContent = '↻ 讀取中…';
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('dataContent').style.display = 'none';
+  document.getElementById('nowBlock').style.display = 'none';
+
+  try {
+    const base = `latitude=${LAT}&longitude=${LON}&timezone=Asia%2FTaipei&forecast_days=7`;
+    const [r1, r2] = await Promise.all([
+      fetch(`https://marine-api.open-meteo.com/v1/marine?${base}&hourly=wave_height,wave_period,wave_direction`),
+      fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=wind_speed_10m,wind_direction_10m,precipitation,weather_code`),
+    ]);
+    if (!r1.ok || !r2.ok) throw new Error('API failed');
+    const [marine, weather] = await Promise.all([r1.json(), r2.json()]);
+
+    const times   = marine.hourly.time;
+    const waveH   = marine.hourly.wave_height;
+    const waveP   = marine.hourly.wave_period;
+    const waveDir = marine.hourly.wave_direction;
+    const windKmh = weather.hourly.wind_speed_10m;
+    const windDir = weather.hourly.wind_direction_10m;
+    const precip  = weather.hourly.precipitation;
+
+    allHourly = times.map((t, i) => {
+      const windMs = windKmh[i] != null ? windKmh[i]/3.6 : 0;
+      const score = calcScore({
+        waveH: waveH[i]??0, waveP: waveP[i]??0,
+        windMs, windDir: windDir[i]??null, precipMmH: precip[i]??0,
+      });
+      return {
+        t, hour: parseInt(t.slice(11,13)), dayKey: t.slice(0,10),
+        waveH: waveH[i]??0, waveP: waveP[i]??0, waveDir: waveDir[i]??null,
+        windMs, windDir: windDir[i]??null, precip: precip[i]??0,
+        score,
+      };
     });
-  });
-  return grouped;
+
+    renderNow();
+    renderDays();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('dataContent').style.display = 'block';
+    document.getElementById('nowBlock').style.display = 'flex';
+
+    const now = new Date();
+    document.getElementById('updatedAt').textContent =
+      `更新時間：${now.toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`;
+  } catch(e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+  }
+
+  btn.classList.remove('loading'); btn.textContent = '↻ 更新';
 }
 
-async function fetchData() {
-  const base = `latitude=${LAT}&longitude=${LON}&timezone=Asia%2FTaipei&forecast_days=7`;
+// ── RENDER NOW ──
+function renderNow() {
+  const now = new Date();
+  const h = allHourly.find(d => new Date(d.t) >= now) || allHourly[0];
+  if (!h) return;
 
-  const [r1, r2] = await Promise.all([
-    fetch(`https://marine-api.open-meteo.com/v1/marine?${base}` +
-      `&daily=wave_height_max,wave_period_max,wave_direction_dominant,swell_wave_height_max,swell_wave_period_max` +
-      `&hourly=wave_height,wave_period,wave_direction`),
-    fetch(`https://api.open-meteo.com/v1/forecast?${base}` +
-      `&daily=weather_code,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_sum` +
-      `&hourly=wind_speed_10m,wind_direction_10m,weather_code,precipitation`),
-  ]);
+  const { grade, cls, color } = gradeInfo(h.score);
 
-  if (!r1.ok || !r2.ok) throw new Error('API 請求失敗，請稍後再試');
-  const [marine, weather] = await Promise.all([r1.json(), r2.json()]);
-  return { marine, weather };
+  document.getElementById('nowVerdict').textContent = grade;
+  document.getElementById('nowVerdict').className = `now-verdict ${cls}`;
+  document.getElementById('nowWave').textContent   = h.waveH.toFixed(1);
+  document.getElementById('nowPeriod').textContent = h.waveP.toFixed(0);
+  document.getElementById('nowWind').textContent   = h.windMs.toFixed(1);
+
+  const ringNum = document.getElementById('ringNum');
+  ringNum.textContent  = h.score;
+  ringNum.style.color  = color;
+
+  const circ = 2 * Math.PI * 40; // r=40
+  const fill = document.getElementById('ringFill');
+  fill.style.strokeDasharray  = circ;
+  fill.style.strokeDashoffset = circ * (1 - h.score/100);
+  fill.style.stroke = color;
 }
 
-// Per-card mini surf icon SVG
-const MINI_SVG = `<svg class="card-surf-icon" viewBox="0 0 44 34" xmlns="http://www.w3.org/2000/svg">
-  <path d="M0,22 C10,14 20,22 28,18 C36,14 40,22 44,18 L44,34 L0,34Z" fill="#0284c7" opacity="0.5"/>
-  <path d="M0,26 C12,20 22,28 32,24 C40,21 42,28 44,24 L44,34 L0,34Z" fill="#38bdf8" opacity="0.4"/>
-  <ellipse cx="22" cy="19" rx="11" ry="2.2" fill="white" opacity="0.9" transform="rotate(-9,22,19)"/>
-  <circle cx="25" cy="11" r="3.2" fill="white" opacity="0.95"/>
-  <line x1="25" y1="14" x2="23" y2="19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="19" y2="14" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="30" y2="13" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="23" y1="19" x2="20" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="23" y1="19" x2="26" y2="21" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-</svg>`;
+// ── RENDER DAYS ──
+function renderDays() {
+  const byDay = {};
+  allHourly.forEach(h => { if (!byDay[h.dayKey]) byDay[h.dayKey]=[]; byDay[h.dayKey].push(h); });
 
-function buildHourlyHTML(hours) {
-  if (!hours || !hours.length) return '<p style="color:#64748b;font-size:0.78rem;padding:0.5rem 0">無逐時資料</p>';
+  const days = Object.keys(byDay).sort().slice(0,7);
+  const container = document.getElementById('dayCards');
+  container.innerHTML = '';
 
-  const scored = hours.map(h => {
-    const { score } = calcScore({
-      waveHeight: h.waveHeight, wavePeriod: h.wavePeriod,
-      windSpeed: h.windSpeed, windDir: h.windDir,
-      precip: h.precip, isHourly: true,
-    });
-    return { ...h, score };
+  days.forEach((dayKey, idx) => {
+    const hours = byDay[dayKey];
+    // Use surf hours 05:00–19:00 for daily summary
+    const surfH = hours.filter(h => h.hour >= 5 && h.hour <= 19);
+    if (!surfH.length) return;
+
+    const bestScore = Math.max(...surfH.map(h=>h.score));
+    const avgWave   = (surfH.reduce((s,h)=>s+h.waveH,0)/surfH.length).toFixed(1);
+    const maxWave   = Math.max(...surfH.map(h=>h.waveH)).toFixed(1);
+    const avgPeriod = (surfH.reduce((s,h)=>s+h.waveP,0)/surfH.length).toFixed(0);
+    const avgWindMs = (surfH.reduce((s,h)=>s+h.windMs,0)/surfH.length).toFixed(1);
+
+    const dt = new Date(dayKey + 'T12:00:00');
+    const { grade, cls } = gradeInfo(bestScore);
+    const isToday = dayKey === new Date().toISOString().slice(0,10);
+    const dayName = isToday ? '今天' : '週' + DAYS_TW[dt.getDay()];
+    const mmdd = `${dt.getMonth()+1}/${dt.getDate()}`;
+
+    const card = document.createElement('div');
+    card.className = `day-card ${cls}`;
+    card.id = `day-${idx}`;
+    card.innerHTML = `
+      <div>
+        <div class="day-name">${dayName}</div>
+        <div class="day-mmdd">${mmdd}</div>
+      </div>
+      <div>
+        <div class="day-wave">🌊 ${avgWave}–${maxWave}m &nbsp;${avgPeriod}s</div>
+        <div class="day-meta">💨 ${avgWindMs} m/s &nbsp;點選查看逐時</div>
+      </div>
+      <div class="day-right">
+        <div class="day-badge badge-${cls}">${grade}</div>
+        <div class="day-chevron">▼</div>
+      </div>`;
+    card.onclick = () => toggleDay(idx, hours);
+    container.appendChild(card);
+
+    const panel = document.createElement('div');
+    panel.className = 'hourly-panel';
+    panel.id = `panel-${idx}`;
+    container.appendChild(panel);
   });
+}
 
-  const allScores = scored.map(h => h.score);
-  let best = findBestWindow(allScores, 55) || findBestWindow(allScores, 40);
+// ── TOGGLE + RENDER HOURLY ──
+let openIdx = -1;
+function toggleDay(idx, hours) {
+  const panel = document.getElementById(`panel-${idx}`);
+  const card  = document.getElementById(`day-${idx}`);
+  const isOpen = panel.classList.contains('show');
 
-  // Banner
+  // close all
+  document.querySelectorAll('.hourly-panel').forEach(p=>p.classList.remove('show'));
+  document.querySelectorAll('.day-card').forEach(c=>c.classList.remove('active'));
+
+  if (!isOpen) {
+    card.classList.add('active');
+    panel.classList.add('show');
+    if (openIdx !== idx) buildHourly(panel, hours);
+    openIdx = idx;
+  } else {
+    openIdx = -1;
+  }
+}
+
+function buildHourly(panel, hours) {
+  const allScores = hours.map(h=>h.score);
+  const best = findBestWindow(allScores,55) || findBestWindow(allScores,40);
+
   let bannerHTML = '';
   if (best) {
-    const s = `${String(scored[best.start].hour).padStart(2,'0')}:00`;
-    const e = `${String(scored[best.end].hour).padStart(2,'0')}:59`;
+    const s = String(hours[best.start].hour).padStart(2,'0')+':00';
+    const e = String(hours[best.end].hour).padStart(2,'0')+':59';
     bannerHTML = `<div class="best-banner">⭐ 最佳時段：${s} – ${e}</div>`;
   }
 
-  // Tiles
-  const tilesHTML = scored.map((h, idx) => {
+  const tiles = hours.map((h, idx) => {
     const night = h.hour < 6 || h.hour >= 20;
-    const { scCls, color } = scoreGrade(h.score);
-    const timeStr = `${String(h.hour).padStart(2,'0')}:00`;
+    const { cls, color } = gradeInfo(h.score);
+    const waveEmoji = h.waveH >= 2 ? '🌊' : h.waveH >= 1 ? '🏄' : h.waveH >= 0.5 ? '〜' : '💤';
 
-    // Determine best bracket class
     let bCls = '';
     if (best) {
-      const inBest = idx >= best.start && idx <= best.end;
-      if (inBest) {
-        if (best.start === best.end) bCls = 'best-solo';
-        else if (idx === best.start) bCls = 'best-start';
-        else if (idx === best.end)   bCls = 'best-end';
-        else                         bCls = 'best-mid';
+      const inB = idx >= best.start && idx <= best.end;
+      if (inB) {
+        bCls = best.start===best.end ? 'best-solo'
+             : idx===best.start      ? 'best-start'
+             : idx===best.end        ? 'best-end'
+             : 'best-mid';
       }
     }
 
-    return `<div class="hour-tile${night ? ' night' : ''}${bCls ? ' ' + bCls : ''}">
-      <div class="hour-time">${timeStr}</div>
-      <div class="hour-score-num ${scCls}">${h.score}</div>
-      <div class="hour-wave">🌊 ${h.waveHeight.toFixed(1)}m</div>
-      <div class="hour-wind">${windArrow(h.windDir ?? 0)} ${Math.round(h.windSpeed)}</div>
-      <div class="hour-bar"><div class="hour-bar-fill" style="width:${h.score}%;background:${color}"></div></div>
+    return `<div class="hour-tile${night?' night':''}${bCls?' '+bCls:''}">
+      <div class="h-time">${String(h.hour).padStart(2,'0')}:00</div>
+      <div class="h-score ${cls}">${h.score}</div>
+      <div class="h-wave">${waveEmoji}${h.waveH.toFixed(1)}m</div>
+      <div class="h-wind">${windArrowCh(h.windDir)}${h.windMs.toFixed(0)}</div>
+      <div class="h-bar"><div class="h-fill" style="width:${h.score}%;background:${color}"></div></div>
     </div>`;
   }).join('');
 
-  return `${bannerHTML}<div class="hourly-scroll">${tilesHTML}</div>`;
-}
+  panel.innerHTML = `
+    ${bannerHTML}
+    <div class="hourly-scroll">${tiles}</div>
+    <div class="panel-note">框線 = 最佳時段 &nbsp;｜&nbsp; 分數 / 波高 / 風向風速(m/s)</div>
+  `;
 
-function renderCards({ marine, weather }) {
-  const dd = marine.daily;
-  const wd = weather.daily;
-  const hourlyGroups = groupHourlyByDate(marine.hourly, weather.hourly);
-  const today = new Date().toISOString().slice(0, 10);
-  const container = document.getElementById('cards');
-  container.innerHTML = '';
-
-  dd.time.forEach((dateStr, i) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const isToday = dateStr === today;
-
-    const waveHeight = dd.wave_height_max[i] ?? 0;
-    const wavePeriod = dd.wave_period_max[i] ?? 0;
-    const waveDir    = dd.wave_direction_dominant[i] ?? null;
-    const swellH     = dd.swell_wave_height_max[i];
-    const swellP     = dd.swell_wave_period_max[i];
-    const windSpeed  = wd.wind_speed_10m_max[i] ?? 0;
-    const windDir    = wd.wind_direction_10m_dominant[i] ?? null;
-    const precipSum  = wd.precipitation_sum[i] ?? 0;
-    const code       = wd.weather_code[i] ?? 0;
-
-    const { score, notes } = calcScore({ waveHeight, wavePeriod, windSpeed, windDir, precip: precipSum });
-    const { grade, cls } = scoreGrade(score);
-    const { label: wLabel, icon: wIcon } = wmoInfo(code);
-    const tipText = notes.slice(0, 3).join('・');
-    const weekday = `星期${WEEKDAYS[d.getDay()]}`;
-    const dateLabel = `${MONTHS[d.getMonth()]}${d.getDate()}日`;
-    const hourlyHTML = buildHourlyHTML(hourlyGroups[dateStr]);
-
-    const card = document.createElement('div');
-    card.className = `card ${cls}${isToday ? ' today-card' : ''}`;
-    card.innerHTML = `
-      <div class="card-header">
-        <div class="card-header-left">
-          ${MINI_SVG}
-          <div class="card-date">
-            <div class="weekday">${weekday}${isToday ? '<span class="today-tag">今天</span>' : ''}</div>
-            <div class="date-str">${dateLabel}</div>
-          </div>
-        </div>
-        <div class="card-header-right">
-          <div class="rating-badge">
-            <div class="score">${score}</div>
-            <div class="grade-label">${grade}</div>
-          </div>
-          <div class="expand-btn" title="展開逐時預報">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3,5 8,11 13,5"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="metrics">
-        <div class="metric">
-          <div class="metric-label">🌊 波高</div>
-          <div class="metric-value">${waveHeight.toFixed(1)} <span class="unit">m</span></div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">⏱ 浪週期</div>
-          <div class="metric-value">${wavePeriod.toFixed(0)} <span class="unit">秒</span></div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">💨 風速</div>
-          <div class="metric-value">${windArrow(windDir ?? 0)} ${windSpeed.toFixed(0)} <span class="unit">km/h</span></div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">🧭 風向 / 浪向</div>
-          <div class="metric-value" style="font-size:0.83rem">${windDir != null ? degToCompass(windDir) : '--'} / ${waveDir != null ? degToCompass(waveDir) : '--'}</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">${wIcon} 天氣</div>
-          <div class="metric-value" style="font-size:0.83rem">${wLabel}</div>
-        </div>
-        ${swellH != null ? `<div class="metric">
-          <div class="metric-label">🏄 湧浪</div>
-          <div class="metric-value">${swellH.toFixed(1)}<span class="unit">m</span> ${swellP != null ? '/ ' + swellP.toFixed(0) + '<span class="unit">s</span>' : ''}</div>
-        </div>` : ''}
-      </div>
-
-      ${tipText ? `<div class="surf-tip">${tipText}</div>` : ''}
-
-      <div class="hourly-panel">
-        <div class="hourly-inner">
-          <div class="hourly-content">
-            <div class="hourly-divider"></div>
-            ${hourlyHTML}
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Toggle expand
-    const panel = card.querySelector('.hourly-panel');
-    card.querySelector('.card-header').addEventListener('click', () => {
-      panel.classList.toggle('open');
-      card.classList.toggle('expanded');
+  // scroll to best start
+  if (best) {
+    requestAnimationFrame(() => {
+      const scroll = panel.querySelector('.hourly-scroll');
+      const tileEls = scroll?.querySelectorAll('.hour-tile');
+      if (scroll && tileEls?.[best.start])
+        scroll.scrollLeft = Math.max(0, tileEls[best.start].offsetLeft - 24);
     });
-
-    container.appendChild(card);
-
-    // Auto-open today and scroll to best hour
-    if (isToday) {
-      setTimeout(() => {
-        panel.classList.add('open');
-        card.classList.add('expanded');
-        const scroll = panel.querySelector('.hourly-scroll');
-        const bestTile = panel.querySelector('.best-start, .best-solo');
-        if (scroll && bestTile) {
-          scroll.scrollLeft = Math.max(0, bestTile.offsetLeft - 20);
-        }
-      }, 350);
-    }
-  });
-
-  document.getElementById('status').style.display = 'none';
-  container.style.display = 'grid';
-}
-
-async function init() {
-  try {
-    const data = await fetchData();
-    renderCards(data);
-  } catch (err) {
-    document.getElementById('status').innerHTML = `
-      <p style="color:#f87171;font-size:1rem;">⚠️ 無法載入資料</p>
-      <p style="color:#64748b;margin-top:0.5rem;font-size:0.84rem;">${err.message}</p>
-      <button onclick="location.reload()" style="
-        margin-top:1rem;padding:0.5rem 1.4rem;
-        background:#38bdf8;color:#0a1628;
-        border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600">
-        重新載入
-      </button>
-    `;
   }
 }
 
-init();
+loadData();
 </script>
 </body>
 </html>
